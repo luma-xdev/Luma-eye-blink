@@ -1,286 +1,1933 @@
-/* ==========================================================
-   CODED EYE BLINK — PURE JAVASCRIPT / CANVAS
-   No MP4 required. The browser renders the animation live.
-   ========================================================== */
+/* =====================================================
+   LIVE EYE MUSIC PLAYER
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d", { alpha: false });
-const stage = document.getElementById("stage");
-const music = document.getElementById("music");
-const playBtn = document.getElementById("playBtn");
-const muteBtn = document.getElementById("muteBtn");
-const fsBtn = document.getElementById("fsBtn");
-const caption = document.getElementById("caption");
+   - Online song search
+   - LRCLIB synced lyrics
+   - Live Canvas eye
+   - Full eyelid blink
+   - Iris movement
+   - Glow
+   - Zoom
+   - Lyrics synchronization
+   ===================================================== */
 
-const CONFIG = {
-  duration: 30,              // seconds before looping
-  blinkMin: 2.2,             // minimum seconds between blinks
-  blinkMax: 5.0,             // maximum seconds between blinks
-  closeTime: 0.13,           // closing phase
-  holdTime: 0.055,           // fully closed
-  openTime: 0.18,            // opening phase
-  irisColor: [65, 190, 255], // RGB
-  glow: true,
-  musicSync: true
-};
 
-let W = 1080, H = 1920;
-let running = false;
-let raf = 0;
-let startWall = 0;
-let elapsed = 0;
-let nextBlink = 2.8;
+/* ============================================
+   ELEMENTS
+============================================ */
+
+const canvas =
+    document.getElementById("eyeCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const audio =
+    document.getElementById("audio");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const searchButton =
+    document.getElementById("searchButton");
+
+const results =
+    document.getElementById("results");
+
+const status =
+    document.getElementById("status");
+
+const songTitle =
+    document.getElementById("songTitle");
+
+const playButton =
+    document.getElementById("playButton");
+
+const muteButton =
+    document.getElementById("muteButton");
+
+const fullscreenButton =
+    document.getElementById("fullscreenButton");
+
+const visual =
+    document.querySelector(".visual");
+
+const previousLyric =
+    document.querySelector(".previous");
+
+const currentLyric =
+    document.querySelector(".current");
+
+const nextLyric =
+    document.querySelector(".next");
+
+
+/* ============================================
+   CANVAS
+============================================ */
+
+let W = 1080;
+
+let H = 1920;
+
+function resizeCanvas() {
+
+    const rect =
+        visual.getBoundingClientRect();
+
+    const dpr =
+        Math.min(
+            window.devicePixelRatio || 1,
+            2
+        );
+
+    W =
+        Math.floor(
+            rect.width * dpr
+        );
+
+    H =
+        Math.floor(
+            rect.height * dpr
+        );
+
+    canvas.width = W;
+
+    canvas.height = H;
+
+}
+
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+resizeCanvas();
+
+
+/* ============================================
+   STATE
+============================================ */
+
+let lyrics = [];
+
+let currentSong = null;
+
+let animationRunning = true;
+
 let blinkStart = -1;
-let blinkPhase = 0;
-let seed = Math.random() * 1000;
 
-const rand = (a,b) => a + Math.random() * (b-a);
-const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b,x));
-const smooth = x => x*x*(3-2*x);
+let nextBlink = 3;
 
-function resize(){
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const r = stage.getBoundingClientRect();
-  W = Math.max(1, Math.floor(r.width*dpr));
-  H = Math.max(1, Math.floor(r.height*dpr));
-  canvas.width = W; canvas.height = H;
-}
-window.addEventListener("resize", resize);
-resize();
+let lastLyricIndex = -1;
 
-function scheduleBlink(now){
-  nextBlink = now + rand(CONFIG.blinkMin, CONFIG.blinkMax);
-}
 
-function blinkAmount(t){
-  if(blinkStart < 0) return 0;
-  const d = t - blinkStart;
-  if(d < 0) return 0;
-  if(d < CONFIG.closeTime) return smooth(d/CONFIG.closeTime);
-  if(d < CONFIG.closeTime + CONFIG.holdTime) return 1;
-  const u = (d - CONFIG.closeTime - CONFIG.holdTime)/CONFIG.openTime;
-  if(u < 1) return 1 - smooth(u);
-  blinkStart = -1;
-  scheduleBlink(t);
-  return 0;
+/* ============================================
+   RANDOM
+============================================ */
+
+function random(min, max) {
+
+    return (
+        min +
+        Math.random() *
+        (max - min)
+    );
+
 }
 
-/* Draw a procedural, stylized eye. The eyelids physically cover the
-   sclera/iris, so it is a real blink animation rather than an iris-only effect. */
-function drawEye(t){
-  ctx.clearRect(0,0,W,H);
 
-  const s = Math.min(W/1080, H/1920);
-  const cx = W*.5;
-  const cy = H*.43;
+/* ============================================
+   EASING
+============================================ */
 
-  // Slow camera motion
-  const zoom = 1 + .035*Math.sin(t*.52);
-  const swayX = Math.sin(t*.21)*W*.006;
-  const swayY = Math.cos(t*.17)*H*.004;
+function smoothstep(x) {
 
-  ctx.save();
-  ctx.translate(cx+swayX, cy+swayY);
-  ctx.scale(zoom, zoom);
-  ctx.translate(-cx, -cy);
+    x =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                x
+            )
+        );
 
-  // Dark blue cinematic background
-  const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*.7);
-  bg.addColorStop(0,"#10243a");
-  bg.addColorStop(.38,"#07111e");
-  bg.addColorStop(1,"#02040a");
-  ctx.fillStyle=bg;
-  ctx.fillRect(-20,-20,W+40,H+40);
+    return (
+        x *
+        x *
+        (3 - 2 * x)
+    );
 
-  // Floating glow
-  if(CONFIG.glow){
-    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.36);
-    g.addColorStop(0,"rgba(0,180,255,.20)");
-    g.addColorStop(.35,"rgba(0,90,255,.09)");
-    g.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=g;
-    ctx.fillRect(0,0,W,H);
-  }
-
-  // Eye geometry
-  const ex = cx;
-  const ey = H*.39;
-  const rx = W*.365;
-  const ry = H*.105;
-
-  // Outer eye glow
-  ctx.save();
-  ctx.filter = "blur(24px)";
-  ctx.fillStyle = "rgba(0,180,255,.30)";
-  ctx.beginPath();
-  ctx.ellipse(ex,ey,rx*1.02,ry*1.1,0,Math.PI,Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-
-  // Eye white / sclera
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(ex-rx,ey);
-  ctx.quadraticCurveTo(ex-rx*.48,ey-ry*1.1,ex,ey-ry);
-  ctx.quadraticCurveTo(ex+rx*.48,ey-ry*1.1,ex+rx,ey);
-  ctx.quadraticCurveTo(ex+rx*.48,ey+ry*1.1,ex,ey+ry);
-  ctx.quadraticCurveTo(ex-rx*.48,ey+ry*1.1,ex-rx,ey);
-  ctx.closePath();
-
-  const sclera = ctx.createLinearGradient(ex,ey-ry,ex,ey+ry);
-  sclera.addColorStop(0,"#dff8ff");
-  sclera.addColorStop(.5,"#8db3c2");
-  sclera.addColorStop(1,"#35505d");
-  ctx.fillStyle=sclera;
-  ctx.fill();
-  ctx.restore();
-
-  // Iris / pupil
-  const blink = blinkAmount(t);
-  const irisX = ex + Math.sin(t*.47+seed)*rx*.075;
-  const irisY = ey + Math.cos(t*.37+seed)*ry*.16;
-
-  ctx.save();
-  // Iris gets partially hidden naturally by eyelid masks below.
-  const ir = ry*.92;
-  const iris = ctx.createRadialGradient(irisX-ir*.2,irisY-ir*.2,ir*.08,irisX,irisY,ir);
-  iris.addColorStop(0,"#e9ffff");
-  iris.addColorStop(.14,"#55e8ff");
-  iris.addColorStop(.48,"#008fc2");
-  iris.addColorStop(.78,"#003d66");
-  iris.addColorStop(1,"#00131f");
-  ctx.fillStyle=iris;
-  ctx.shadowBlur=18;
-  ctx.shadowColor="rgba(0,200,255,.9)";
-  ctx.beginPath();
-  ctx.arc(irisX,irisY,ir,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="#010307";
-  ctx.shadowBlur=0;
-  ctx.beginPath();
-  ctx.arc(irisX,irisY,ir*.36,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="rgba(255,255,255,.9)";
-  ctx.beginPath();
-  ctx.arc(irisX-ir*.25,irisY-ir*.27,ir*.13,0,Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-
-  // Lid masks. Upper lid travels down; lower lid travels up.
-  const upper = blink;
-  const lower = blink*.82;
-
-  ctx.save();
-  ctx.fillStyle="#05080d";
-
-  // Upper eyelid / skin
-  ctx.beginPath();
-  ctx.moveTo(ex-rx*1.08, ey);
-  ctx.quadraticCurveTo(ex-rx*.62, ey-ry*(2.0-1.05*upper), ex, ey-ry*(2.0-1.05*upper));
-  ctx.quadraticCurveTo(ex+rx*.62, ey-ry*(2.0-1.05*upper), ex+rx*1.08, ey);
-  ctx.lineTo(ex+rx*1.2,0);
-  ctx.lineTo(ex-rx*1.2,0);
-  ctx.closePath();
-  ctx.fill();
-
-  // Lower lid / skin
-  ctx.beginPath();
-  ctx.moveTo(ex-rx*1.08, ey);
-  ctx.quadraticCurveTo(ex-rx*.62, ey+ry*(2.0-1.0*lower), ex, ey+ry*(2.0-1.0*lower));
-  ctx.quadraticCurveTo(ex+rx*.62, ey+ry*(2.0-1.0*lower), ex+rx*1.08, ey);
-  ctx.lineTo(ex+rx*1.2,H);
-  ctx.lineTo(ex-rx*1.2,H);
-  ctx.closePath();
-  ctx.fill();
-
-  // Eyelid edges
-  ctx.strokeStyle="rgba(100,190,220,.55)";
-  ctx.lineWidth=Math.max(2,4*s);
-  ctx.beginPath();
-  ctx.moveTo(ex-rx,ey);
-  ctx.quadraticCurveTo(ex-rx*.48,ey-ry*(1.05-upper*.95),ex,ey-ry*(1.05-upper*.95));
-  ctx.quadraticCurveTo(ex+rx*.48,ey-ry*(1.05-upper*.95),ex+rx,ey);
-  ctx.stroke();
-
-  ctx.restore();
-
-  // Subtle scanline/reflection
-  ctx.globalAlpha=.08;
-  ctx.fillStyle="#8eeeff";
-  for(let y=0;y<H;y+=8) ctx.fillRect(0,y,W,1);
-  ctx.globalAlpha=1;
-
-  ctx.restore();
 }
 
-function update(t){
-  elapsed = t % CONFIG.duration;
 
-  if(blinkStart < 0 && elapsed >= nextBlink) {
-    blinkStart = elapsed;
-  }
-  drawEye(elapsed);
+/* ============================================
+   BLINK
+============================================ */
 
-  // Caption pulse
-  const pulse = 1 + .025*Math.sin(elapsed*3);
-  caption.style.transform = `scale(${pulse})`;
+const BLINK_CLOSE =
+    0.13;
 
-  if(CONFIG.musicSync && !music.paused && music.duration) {
-    // Optional: if your music has a different length, its current position
-    // is used as the animation clock.
-    elapsed = music.currentTime % CONFIG.duration;
-  }
+const BLINK_HOLD =
+    0.055;
 
-  raf = requestAnimationFrame(loop);
+const BLINK_OPEN =
+    0.18;
+
+
+function getBlinkAmount(time) {
+
+    if (blinkStart < 0) {
+
+        if (time >= nextBlink) {
+
+            blinkStart =
+                time;
+
+        }
+        else {
+
+            return 0;
+
+        }
+
+    }
+
+
+    const d =
+        time -
+        blinkStart;
+
+
+    if (
+        d <
+        BLINK_CLOSE
+    ) {
+
+        return smoothstep(
+            d /
+            BLINK_CLOSE
+        );
+
+    }
+
+
+    if (
+        d <
+        BLINK_CLOSE +
+        BLINK_HOLD
+    ) {
+
+        return 1;
+
+    }
+
+
+    const openingProgress =
+
+        (
+            d -
+            BLINK_CLOSE -
+            BLINK_HOLD
+        )
+        /
+        BLINK_OPEN;
+
+
+    if (
+        openingProgress <
+        1
+    ) {
+
+        return (
+
+            1 -
+            smoothstep(
+                openingProgress
+            )
+
+        );
+
+    }
+
+
+    blinkStart =
+        -1;
+
+
+    nextBlink =
+        time +
+        random(
+            2.2,
+            5.0
+        );
+
+
+    return 0;
+
 }
 
-function loop(){
-  const now = (performance.now()-startWall)/1000;
-  update(now);
+
+/* ============================================
+   DRAW EYE
+============================================ */
+
+function drawEye(time) {
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    const cx =
+        W / 2;
+
+    const cy =
+        H * .40;
+
+
+    /*
+       Cinematic camera movement
+    */
+
+    const zoom =
+
+        1 +
+        Math.sin(
+            time * .5
+        )
+        *
+        .035;
+
+
+    const moveX =
+
+        Math.sin(
+            time * .21
+        )
+        *
+        W *
+        .006;
+
+
+    const moveY =
+
+        Math.cos(
+            time * .17
+        )
+        *
+        H *
+        .004;
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        cx + moveX,
+        cy + moveY
+    );
+
+
+    ctx.scale(
+        zoom,
+        zoom
+    );
+
+
+    ctx.translate(
+        -cx,
+        -cy
+    );
+
+
+    /* ======================================
+       BACKGROUND
+    ====================================== */
+
+    const bg =
+
+        ctx.createRadialGradient(
+            cx,
+            cy,
+            0,
+            cx,
+            cy,
+            W * .75
+        );
+
+
+    bg.addColorStop(
+        0,
+        "#102b42"
+    );
+
+
+    bg.addColorStop(
+        .40,
+        "#07121f"
+    );
+
+
+    bg.addColorStop(
+        1,
+        "#010307"
+    );
+
+
+    ctx.fillStyle =
+        bg;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* ======================================
+       BLUE GLOW
+    ====================================== */
+
+    const glow =
+
+        ctx.createRadialGradient(
+            cx,
+            cy,
+            0,
+            cx,
+            cy,
+            W * .45
+        );
+
+
+    glow.addColorStop(
+        0,
+        "rgba(0,200,255,.20)"
+    );
+
+
+    glow.addColorStop(
+        .45,
+        "rgba(0,100,255,.08)"
+    );
+
+
+    glow.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+
+    ctx.fillStyle =
+        glow;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* ======================================
+       EYE SIZE
+    ====================================== */
+
+    const eyeX =
+        cx;
+
+    const eyeY =
+        H * .39;
+
+    const rx =
+        W * .365;
+
+    const ry =
+        H * .105;
+
+
+    /* ======================================
+       EYE OUTER GLOW
+    ====================================== */
+
+    ctx.save();
+
+    ctx.filter =
+        "blur(24px)";
+
+    ctx.fillStyle =
+        "rgba(0,190,255,.28)";
+
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        eyeX,
+        eyeY,
+        rx * 1.02,
+        ry * 1.12,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+
+
+    /* ======================================
+       EYE WHITE
+    ====================================== */
+
+    ctx.save();
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        eyeX - rx,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX - rx * .5,
+        eyeY - ry,
+
+        eyeX,
+        eyeY - ry
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX + rx * .5,
+        eyeY - ry,
+
+        eyeX + rx,
+        eyeY
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX + rx * .5,
+        eyeY + ry,
+
+        eyeX,
+        eyeY + ry
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX - rx * .5,
+        eyeY + ry,
+
+        eyeX - rx,
+        eyeY
+
+    );
+
+
+    ctx.closePath();
+
+
+    const sclera =
+
+        ctx.createLinearGradient(
+
+            eyeX,
+            eyeY - ry,
+
+            eyeX,
+            eyeY + ry
+
+        );
+
+
+    sclera.addColorStop(
+        0,
+        "#e7fbff"
+    );
+
+
+    sclera.addColorStop(
+        .5,
+        "#8eafbd"
+    );
+
+
+    sclera.addColorStop(
+        1,
+        "#334b58"
+    );
+
+
+    ctx.fillStyle =
+        sclera;
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    /* ======================================
+       IRIS
+    ====================================== */
+
+    const irisX =
+
+        eyeX +
+        Math.sin(
+            time * .47
+        )
+        *
+        rx *
+        .07;
+
+
+    const irisY =
+
+        eyeY +
+        Math.cos(
+            time * .37
+        )
+        *
+        ry *
+        .15;
+
+
+    const irisRadius =
+        ry * .92;
+
+
+    const iris =
+
+        ctx.createRadialGradient(
+
+            irisX -
+            irisRadius * .2,
+
+            irisY -
+            irisRadius * .2,
+
+            irisRadius * .05,
+
+            irisX,
+            irisY,
+
+            irisRadius
+
+        );
+
+
+    iris.addColorStop(
+        0,
+        "#ffffff"
+    );
+
+
+    iris.addColorStop(
+        .15,
+        "#56eaff"
+    );
+
+
+    iris.addColorStop(
+        .45,
+        "#009acb"
+    );
+
+
+    iris.addColorStop(
+        .75,
+        "#003d63"
+    );
+
+
+    iris.addColorStop(
+        1,
+        "#00111c"
+    );
+
+
+    ctx.save();
+
+
+    ctx.shadowColor =
+        "#00cfff";
+
+    ctx.shadowBlur =
+        20;
+
+
+    ctx.fillStyle =
+        iris;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+
+        irisX,
+        irisY,
+
+        irisRadius,
+
+        0,
+        Math.PI * 2
+
+    );
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    /* ======================================
+       PUPIL
+    ====================================== */
+
+    ctx.fillStyle =
+        "#010207";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+
+        irisX,
+        irisY,
+
+        irisRadius * .35,
+
+        0,
+        Math.PI * 2
+
+    );
+
+
+    ctx.fill();
+
+
+    /* ======================================
+       EYE REFLECTION
+    ====================================== */
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.9)";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+
+        irisX -
+        irisRadius * .25,
+
+        irisY -
+        irisRadius * .27,
+
+        irisRadius * .13,
+
+        0,
+        Math.PI * 2
+
+    );
+
+
+    ctx.fill();
+
+
+    /* ======================================
+       BLINK AMOUNT
+    ====================================== */
+
+    const blink =
+        getBlinkAmount(time);
+
+
+    const upper =
+        blink;
+
+
+    const lower =
+        blink * .82;
+
+
+    /* ======================================
+       UPPER EYELID
+    ====================================== */
+
+    ctx.save();
+
+
+    ctx.fillStyle =
+        "#05080d";
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+
+        eyeX -
+        rx * 1.10,
+
+        eyeY
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX -
+        rx * .60,
+
+        eyeY -
+        ry *
+        (2 -
+        1.05 *
+        upper),
+
+        eyeX,
+
+        eyeY -
+        ry *
+        (2 -
+        1.05 *
+        upper)
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX +
+        rx * .60,
+
+        eyeY -
+        ry *
+        (2 -
+        1.05 *
+        upper),
+
+        eyeX +
+        rx * 1.10,
+
+        eyeY
+
+    );
+
+
+    ctx.lineTo(
+        W,
+        0
+    );
+
+
+    ctx.lineTo(
+        0,
+        0
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    /* ======================================
+       LOWER EYELID
+    ====================================== */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+
+        eyeX -
+        rx * 1.10,
+
+        eyeY
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX -
+        rx * .60,
+
+        eyeY +
+        ry *
+        (2 -
+        1.0 *
+        lower),
+
+        eyeX,
+
+        eyeY +
+        ry *
+        (2 -
+        1.0 *
+        lower)
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX +
+        rx * .60,
+
+        eyeY +
+        ry *
+        (2 -
+        1.0 *
+        lower),
+
+        eyeX +
+        rx * 1.10,
+
+        eyeY
+
+    );
+
+
+    ctx.lineTo(
+        W,
+        H
+    );
+
+
+    ctx.lineTo(
+        0,
+        H
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    /* ======================================
+       EYELID EDGE
+    ====================================== */
+
+    ctx.strokeStyle =
+        "rgba(100,210,240,.6)";
+
+
+    ctx.lineWidth =
+        4;
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        eyeX - rx,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX -
+        rx * .5,
+
+        eyeY -
+        ry *
+        (1.05 -
+        upper),
+
+        eyeX,
+
+        eyeY -
+        ry *
+        (1.05 -
+        upper)
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        eyeX +
+        rx * .5,
+
+        eyeY -
+        ry *
+        (1.05 -
+        upper),
+
+        eyeX + rx,
+
+        eyeY
+
+    );
+
+
+    ctx.stroke();
+
+
+    ctx.restore();
+
+
+    /* ======================================
+       SCANLINES
+    ====================================== */
+
+    ctx.globalAlpha =
+        .06;
+
+
+    ctx.fillStyle =
+        "#9eefff";
+
+
+    for (
+        let y = 0;
+        y < H;
+        y += 8
+    ) {
+
+        ctx.fillRect(
+            0,
+            y,
+            W,
+            1
+        );
+
+    }
+
+
+    ctx.globalAlpha =
+        1;
+
+
+    ctx.restore();
+
 }
 
-async function play(){
-  try {
-    await music.play();
-  } catch(e) {
-    // Autoplay/audio restrictions are normal. Animation still works.
-  }
-  running = true;
-  playBtn.textContent="⏸ Pause";
-  startWall = performance.now() - elapsed*1000;
-  cancelAnimationFrame(raf);
-  raf = requestAnimationFrame(loop);
+
+/* ============================================
+   ANIMATION LOOP
+============================================ */
+
+function render() {
+
+    const time =
+
+        audio.duration
+            ?
+        audio.currentTime
+            :
+        (
+            performance.now()
+            / 1000
+        )
+        % 30;
+
+
+    drawEye(time);
+
+
+    requestAnimationFrame(
+        render
+    );
+
 }
 
-function pause(){
-  music.pause();
-  running=false;
-  playBtn.textContent="▶ Play";
-  cancelAnimationFrame(raf);
+
+render();
+
+
+/* ============================================
+   LRCLIB SEARCH
+============================================ */
+
+async function searchLyrics(query) {
+
+    const url =
+
+        "https://lrclib.net/api/search?q="
+        +
+        encodeURIComponent(query);
+
+
+    const response =
+        await fetch(url);
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Lyrics search failed"
+        );
+
+    }
+
+
+    return response.json();
+
 }
 
-playBtn.addEventListener("click",()=> running ? pause() : play());
 
-muteBtn.addEventListener("click",()=>{
-  music.muted=!music.muted;
-  muteBtn.textContent=music.muted ? "🔇 Muted" : "🔊 Sound";
-});
+/* ============================================
+   SEARCH UI
+============================================ */
 
-fsBtn.addEventListener("click",async()=>{
-  if(!document.fullscreenElement) await stage.requestFullscreen?.();
-  else await document.exitFullscreen?.();
-});
+searchButton.addEventListener(
+    "click",
+    performSearch
+);
 
-// Spacebar play/pause
-window.addEventListener("keydown",e=>{
-  if(e.code==="Space" && e.target.tagName!=="BUTTON"){
-    e.preventDefault();
-    running ? pause() : play();
-  }
-});
 
-// Start rendering silently; user clicks Play for audio.
-scheduleBlink(0);
-drawEye(0);
+searchInput.addEventListener(
+    "keydown",
+
+    event => {
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            performSearch();
+
+        }
+
+    }
+
+);
+
+
+async function performSearch() {
+
+    const query =
+        searchInput.value.trim();
+
+
+    if (!query) {
+
+        status.textContent =
+            "Type a song or artist.";
+
+        return;
+
+    }
+
+
+    status.textContent =
+        "Searching...";
+
+
+    results.innerHTML =
+        "";
+
+
+    try {
+
+        const songs =
+            await searchLyrics(
+                query
+            );
+
+
+        if (
+            !songs ||
+            !songs.length
+        ) {
+
+            status.textContent =
+                "No matching songs found.";
+
+            return;
+
+        }
+
+
+        status.textContent =
+            `${songs.length} results found`;
+
+
+        songs
+            .slice(0, 10)
+            .forEach(
+                song => {
+
+                    createSongCard(
+                        song
+                    );
+
+                }
+            );
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Search failed. Try again.";
+
+    }
+
+}
+
+
+/* ============================================
+   SONG CARD
+============================================ */
+
+function createSongCard(song) {
+
+    const item =
+        document.createElement(
+            "div"
+        );
+
+
+    item.className =
+        "song";
+
+
+    const image =
+        document.createElement(
+            "img"
+        );
+
+
+    /*
+       LRCLIB does not provide
+       album artwork in every response.
+
+       Use a generated placeholder.
+    */
+
+    image.src =
+        createArtwork(
+            song.trackName ||
+            song.name
+        );
+
+
+    const info =
+        document.createElement(
+            "div"
+        );
+
+
+    info.className =
+        "song-info";
+
+
+    const name =
+        document.createElement(
+            "div"
+        );
+
+
+    name.className =
+        "song-name";
+
+
+    name.textContent =
+        song.trackName ||
+        song.name ||
+        "Unknown";
+
+
+    const artist =
+        document.createElement(
+            "div"
+        );
+
+
+    artist.className =
+        "artist";
+
+
+    artist.textContent =
+        song.artistName ||
+        "Unknown artist";
+
+
+    info.appendChild(
+        name
+    );
+
+
+    info.appendChild(
+        artist
+    );
+
+
+    const badge =
+        document.createElement(
+            "div"
+        );
+
+
+    badge.className =
+        "badge";
+
+
+    badge.textContent =
+
+        song.syncedLyrics
+            ?
+        "SYNCED"
+            :
+        "LYRICS";
+
+
+    item.appendChild(
+        image
+    );
+
+
+    item.appendChild(
+        info
+    );
+
+
+    item.appendChild(
+        badge
+    );
+
+
+    item.addEventListener(
+        "click",
+
+        () => {
+
+            selectSong(
+                song
+            );
+
+        }
+
+    );
+
+
+    results.appendChild(
+        item
+    );
+
+}
+
+
+/* ============================================
+   ARTWORK PLACEHOLDER
+============================================ */
+
+function createArtwork(text) {
+
+    const svg = `
+
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="200"
+            height="200"
+        >
+
+            <rect
+                width="200"
+                height="200"
+                fill="#061522"
+            />
+
+            <circle
+                cx="100"
+                cy="100"
+                r="70"
+                fill="#008dcc"
+                opacity=".25"
+            />
+
+            <circle
+                cx="100"
+                cy="100"
+                r="42"
+                fill="#00cfff"
+                opacity=".20"
+            />
+
+            <text
+                x="100"
+                y="108"
+                text-anchor="middle"
+                fill="white"
+                font-size="20"
+                font-family="Arial"
+            >
+                ♪
+            </text>
+
+        </svg>
+
+    `;
+
+
+    return (
+
+        "data:image/svg+xml;charset=UTF-8,"
+        +
+        encodeURIComponent(svg)
+
+    );
+
+}
+
+
+/* ============================================
+   SELECT SONG
+============================================ */
+
+async function selectSong(song) {
+
+    currentSong =
+        song;
+
+
+    songTitle.textContent =
+
+        `${song.trackName || song.name}
+         — ${song.artistName || ""}`;
+
+
+    status.textContent =
+        "Loading lyrics...";
+
+
+    /*
+       LRCLIB provides the synchronized
+       lyrics when available.
+    */
+
+    try {
+
+        const params =
+            new URLSearchParams({
+
+                track_name:
+                    song.trackName ||
+                    song.name ||
+                    "",
+
+                artist_name:
+                    song.artistName ||
+                    "",
+
+                album_name:
+                    song.albumName ||
+                    "",
+
+                duration:
+                    song.duration ||
+                    ""
+
+            });
+
+
+        const response =
+
+            await fetch(
+
+                "https://lrclib.net/api/get?"
+                +
+                params.toString()
+
+            );
+
+
+        if (
+            response.ok
+        ) {
+
+            const data =
+                await response.json();
+
+
+            lyrics =
+
+                parseSyncedLyrics(
+                    data.syncedLyrics
+                );
+
+        }
+
+        else {
+
+            lyrics =
+                parseSyncedLyrics(
+                    song.syncedLyrics
+                );
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.warn(
+            "Lyrics unavailable",
+            error
+        );
+
+
+        lyrics =
+            parseSyncedLyrics(
+                song.syncedLyrics
+            );
+
+    }
+
+
+    renderInitialLyrics();
+
+
+    /*
+       IMPORTANT AUDIO NOTE:
+
+       Search/lyrics services do not give us
+       a license to download copyrighted songs.
+
+       Therefore this demo looks for a local
+       authorized preview at:
+
+       assets/music.mp3
+
+       Replace that file with audio you are
+       legally allowed to use.
+
+       The selected online song controls
+       the lyrics/title; local audio is the
+       playable source.
+    */
+
+    audio.src =
+        "assets/music.mp3";
+
+
+    audio.load();
+
+
+    try {
+
+        await audio.play();
+
+        playButton.textContent =
+            "⏸";
+
+    }
+
+    catch {
+
+        playButton.textContent =
+            "▶";
+
+        status.textContent =
+   "▶";
+
+        status.textContent =
+            "Song selected. Tap Play to start.";
+
+    }
+
+}
+
+
+/* ============================================
+   PARSE LRC
+============================================ */
+
+function parseSyncedLyrics(lrc) {
+
+    if (!lrc) {
+
+        return [];
+
+    }
+
+
+    const lines =
+        lrc.split("\n");
+
+
+    const output = [];
+
+
+    for (
+        const line
+        of lines
+    ) {
+
+        const match =
+
+            line.match(
+                /^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/
+            );
+
+
+        if (!match) {
+
+            continue;
+
+        }
+
+
+        const minutes =
+            Number(
+                match[1]
+            );
+
+
+        const seconds =
+            Number(
+                match[2]
+            );
+
+
+        const text =
+            match[3].trim();
+
+
+        output.push({
+
+            time:
+                minutes * 60 +
+                seconds,
+
+            text
+
+        });
+
+    }
+
+
+    return output.sort(
+        (a,b) =>
+            a.time -
+            b.time
+    );
+
+}
+
+
+/* ============================================
+   RENDER CURRENT LYRICS
+============================================ */
+
+function renderLyrics() {
+
+    if (!lyrics.length) {
+
+        currentLyric.textContent =
+            "Lyrics unavailable";
+
+        previousLyric.textContent =
+            "";
+
+        nextLyric.textContent =
+            "";
+
+        return;
+
+    }
+
+
+    const time =
+        audio.currentTime;
+
+
+    let index = -1;
+
+
+    for (
+        let i = 0;
+        i < lyrics.length;
+        i++
+    ) {
+
+        if (
+            lyrics[i].time
+            <=
+            time
+        ) {
+
+            index =
+                i;
+
+        }
+
+    }
+
+
+    if (index < 0) {
+
+        currentLyric.textContent =
+            "♪";
+
+        previousLyric.textContent =
+            "";
+
+        nextLyric.textContent =
+            lyrics[0].text;
+
+        return;
+
+    }
+
+
+    previousLyric.textContent =
+
+        lyrics[index - 1]
+            ?
+        lyrics[index - 1].text
+            :
+        "";
+
+
+    currentLyric.textContent =
+
+        lyrics[index].text;
+
+
+    nextLyric.textContent =
+
+        lyrics[index + 1]
+            ?
+        lyrics[index + 1].text
+            :
+        "";
+
+
+    if (
+        index !==
+        lastLyricIndex
+    ) {
+
+        lastLyricIndex =
+            index;
+
+
+        triggerBeat();
+
+    }
+
+}
+
+
+/* ============================================
+   INITIAL LYRICS
+============================================ */
+
+function renderInitialLyrics() {
+
+    lastLyricIndex =
+        -1;
+
+
+    if (
+        lyrics.length
+    ) {
+
+        currentLyric.textContent =
+            lyrics[0].text;
+
+        nextLyric.textContent =
+
+            lyrics[1]
+                ?
+            lyrics[1].text
+                :
+            "";
+
+    }
+
+    else {
+
+        currentLyric.textContent =
+            "Lyrics unavailable";
+
+    }
+
+}
+
+
+/* ============================================
+   BEAT VISUAL
+============================================ */
+
+function triggerBeat() {
+
+    visual.classList.add(
+        "beat"
+    );
+
+
+    setTimeout(
+        () => {
+
+            visual.classList.remove(
+                "beat"
+            );
+
+        },
+
+        120
+
+    );
+
+}
+
+
+/* ============================================
+   AUDIO TIME
+============================================ */
+
+audio.addEventListener(
+    "timeupdate",
+
+    renderLyrics
+);
+
+
+/* ============================================
+   PLAY BUTTON
+============================================ */
+
+playButton.addEventListener(
+    "click",
+
+    async () => {
+
+        if (
+            audio.paused
+        ) {
+
+            try {
+
+                await audio.play();
+
+                playButton.textContent =
+                    "⏸";
+
+            }
+
+            catch {
+
+                status.textContent =
+                    "Tap Play again to allow audio.";
+
+            }
+
+        }
+
+        else {
+
+            audio.pause();
+
+            playButton.textContent =
+                "▶";
+
+        }
+
+    }
+);
+
+
+/* ============================================
+   MUTE
+============================================ */
+
+muteButton.addEventListener(
+    "click",
+
+    () => {
+
+        audio.muted =
+            !audio.muted;
+
+
+        muteButton.textContent =
+
+            audio.muted
+                ?
+            "🔇"
+                :
+            "🔊";
+
+    }
+);
+
+
+/* ============================================
+   FULLSCREEN
+============================================ */
+
+fullscreenButton.addEventListener(
+    "click",
+
+    async () => {
+
+        if (
+            !document.fullscreenElement
+        ) {
+
+            await visual.requestFullscreen?.();
+
+        }
+
+        else {
+
+            await document.exitFullscreen?.();
+
+        }
+
+    }
+);
+
+
+/* ============================================
+   AUTO SEARCH EXAMPLE
+============================================ */
+
+/*
+   Page खुलने पर कोई copyrighted song
+   automatically download नहीं किया जाता।
+
+   User खुद search करता है.
+*/
+
+
+status.textContent =
+    "Search a song, then tap a result.";
