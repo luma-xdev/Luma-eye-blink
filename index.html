@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#05070d">
+  <meta name="description" content="Pure HTML/CSS/JavaScript coded eye blink live animation">
+  <title>Coded Eye — Live Blink</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="stage" id="stage" aria-label="Animated eye">
+      <canvas id="canvas"></canvas>
+      <div class="hud">
+        <span class="dot"></span>
+        <span>LIVE EYE</span>
+      </div>
+      <div class="caption" id="caption">CODED MOTION</div>
+      <div class="controls">
+        <button id="playBtn" type="button">▶ Play</button>
+        <button id="muteBtn" type="button">🔊 Sound</button>
+        <button id="fsBtn" type="button">⛶ Fullscreen</button>
+      </div>
+      <audio id="music" src="assets/music.mp3" preload="auto" loop></audio>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
