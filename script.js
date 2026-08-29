@@ -1,5 +1,5 @@
 /* =====================================================
-   CIPHER STACK
+   LUMA XDEV
    STATIC SONG + EYE VISUALIZER
 
    No online song search.
@@ -63,128 +63,129 @@ const SONGS = [
 
     {
         id: 1,
-
-        title: "Iron Heart",
-
-        artist: "Song • m-aslale",
-
+        title: "Shape of You",
+        artist: "Ed Sheeran",
         audio: "assets/song1.mp3",
-
         lyrics: [
-
-            {
-                time: 0,
-                text: "WELCOME TO CIPHER STACK"
-            },
-
-            {
-                time: 4,
-                text: "BUILDING DIGITAL FUTURES"
-            },
-
-            {
-                time: 8,
-                text: "THIS IS OUR MOMENT"
-            },
-
-            {
-                time: 12,
-                text: "FEEL THE LIGHT"
-            },
-
-            {
-                time: 16,
-                text: "KEEP MOVING FORWARD"
-            },
-
-            {
-                time: 20,
-                text: "NEVER LOOK BACK"
-            },
-
-            {
-                time: 24,
-                text: "WE ARE STILL HERE"
-            },
-
-            {
-                time: 28,
-                text: "CIPHER STACK"
-            }
-
+            { time: 0, text: "Shape of You" },
+            { time: 10, text: "Ed Sheeran" }
         ]
-
     },
-
 
     {
         id: 2,
-
-        title: "I've Hurt Like This",
-
-        artist: "Song • Warren Morris",
-
+        title: "Starboy",
+        artist: "The Weeknd ft. Daft Punk",
         audio: "assets/song2.mp3",
-
         lyrics: [
-
-            {
-                time: 0,
-                text: "WELCOME BACK"
-            },
-
-            {
-                time: 5,
-                text: "LIGHTS IN THE DARK"
-            },
-
-            {
-                time: 10,
-                text: "KEEP THE DREAM ALIVE"
-            },
-
-            {
-                time: 15,
-                text: "MOVE WITH THE MUSIC"
-            },
-
-            {
-                time: 20,
-                text: "FOLLOW THE LIGHT"
-            },
-
-            {
-                time: 25,
-                text: "NEVER STOP"
-            }
-
+            { time: 0, text: "Starboy" },
+            { time: 10, text: "The Weeknd ft. Daft Punk" }
         ]
-
     },
-
 
     {
         id: 3,
-
-        title: "Iron Heart",
-
-        artist: "Song • m-aslale, Aslale",
-
+        title: "Love Me Like You Do",
+        artist: "Ellie Goulding",
         audio: "assets/song3.mp3",
-
         lyrics: [
+            { time: 0, text: "Love Me Like You Do" },
+            { time: 10, text: "Ellie Goulding" }
+        ]
+    },
 
-            {
-                time: 0,
-                text: "IRON HEART"
-            },
+    {
+        id: 4,
+        title: "Hurts So Good",
+        artist: "Astrid S.",
+        audio: "assets/song4.mp3",
+        lyrics: [
+            { time: 0, text: "Hurts So Good" },
+            { time: 10, text: "Astrid S." }
+        ]
+    },
 
-            {
-                time: 5,
-                text: "RISE AGAIN"
-            },
+    {
+        id: 5,
+        title: "Tera Mera Rishta - New Version",
+        artist: "Emraan Hashmi",
+        audio: "assets/song5.mp3",
+        lyrics: [
+            { time: 0, text: "Tera Mera Rishta" },
+            { time: 10, text: "New Version" }
+        ]
+    },
 
-            {
+    {
+        id: 6,
+        title: "Dancing With Your Ghost",
+        artist: "Sasha Sloan",
+        audio: "assets/song6.mp3",
+        lyrics: [
+            { time: 0, text: "Dancing With Your Ghost" },
+            { time: 10, text: "Sasha Sloan" }
+        ]
+    },
+
+    {
+        id: 7,
+        title: "Him & I",
+        artist: "G-Eazy & Halsey",
+        audio: "assets/song7.mp3",
+        lyrics: [
+            { time: 0, text: "Him & I" },
+            { time: 10, text: "G-Eazy & Halsey" }
+        ]
+    },
+
+    {
+        id: 8,
+        title: "PAIN - Party In My Head",
+        artist: "PAIN",
+        audio: "assets/song8.mp3",
+        lyrics: [
+            { time: 0, text: "Party In My Head" },
+            { time: 10, text: "PAIN" }
+        ]
+    },
+
+    {
+        id: 9,
+        title: "We Are Still Here - Live",
+        artist: "Live",
+        audio: "assets/song9.mp3",
+        lyrics: [
+            { time: 0, text: "We Are Still Here" },
+            { time: 10, text: "Live" }
+        ]
+    },
+
+    {
+        id: 10,
+        title: "Only Love Can Hurt Like This",
+        artist: "Paloma Faith",
+        audio: "assets/song10.mp3",
+        lyrics: [
+            { time: 0, text: "Only Love Can Hurt Like This" },
+            { time: 10, text: "Paloma Faith" }
+        ]
+    },
+
+    {
+        id: 11,
+        title: "Iron Heart 2026",
+        artist: "M-aslale",
+        audio: "assets/song11.mp3",
+        lyrics: [
+            { time: 0, text: "Iron Heart 2026" },
+            { time: 10, text: "M-aslale" }
+        ]
+    }
+
+];
+
+    {
+    
                 time: 10,
                 text: "STAY STRONG"
             },
@@ -515,63 +516,6 @@ const SONGS = [
                 time: 20,
                 text: "KEEP GOING"
             },
-
-            {
-                time: 26,
-                text: "WE ARE STILL HERE"
-            }
-
-        ]
-
-    },
-
-
-    {
-        id: 11,
-
-        title: "We Are Still Here",
-
-        artist: "Song • HEDJ",
-
-        audio: "assets/song11.mp3",
-
-        lyrics: [
-
-            {
-                time: 0,
-                text: "WE ARE STILL HERE"
-            },
-
-            {
-                time: 5,
-                text: "IN THE DARK"
-            },
-
-            {
-                time: 10,
-                text: "UNDER THE LIGHT"
-            },
-
-            {
-                time: 15,
-                text: "WE KEEP MOVING"
-            },
-
-            {
-                time: 20,
-                text: "WE KEEP DREAMING"
-            },
-
-            {
-                time: 27,
-                text: "WE ARE STILL HERE"
-            }
-
-        ]
-
-    }
-
-];
 
 
 /* =====================================================
