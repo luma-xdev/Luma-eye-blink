@@ -1300,4 +1300,605 @@ function drawBackground(W, H) {
 
     ctx.fillRect(
         0,
+        0,
+        W,
+        H
+    );
+
+}
+
+
+/* =====================================================
+   DRAW EYE
+===================================================== */
+
+function drawEye(time) {
+
+    const W =
+        canvas.width;
+
+    const H =
+        canvas.height;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    drawBackground(
+        W,
+        H
+    );
+
+
+    /* Camera */
+
+    const zoom =
+        1 +
+        Math.sin(
+            time * .5
+        )
+        *
+        .025;
+
+
+    const cx =
+        W * .68;
+
+
+    const cy =
+        H * .37;
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        cx,
+        cy
+    );
+
+
+    ctx.scale(
+        zoom,
+        zoom
+    );
+
+
+    ctx.translate(
+        -cx,
+        -cy
+    );
+
+
+    /* =============================================
+       EYE SIZE
+    ============================================= */
+
+    const eyeX =
+        cx;
+
+
+    const eyeY =
+        cy;
+
+
+    const rx =
+        W * .31;
+
+
+    const ry =
+        H * .075;
+
+
+    /* =============================================
+       OUTER GLOW
+    ============================================= */
+
+    ctx.save();
+
+    ctx.filter =
+        "blur(18px)";
+
+    ctx.fillStyle =
+        "rgba(0,190,255,.25)";
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        eyeX,
+        eyeY,
+        rx * 1.05,
+        ry * 1.2,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+    ctx.restore();
+
+
+    /* =============================================
+       EYE WHITE
+    ============================================= */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        eyeX - rx,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX - rx * .5,
+        eyeY - ry,
+        eyeX,
+        eyeY - ry
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX + rx * .5,
+        eyeY - ry,
+        eyeX + rx,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX + rx * .5,
+        eyeY + ry,
+        eyeX,
+        eyeY + ry
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX - rx * .5,
+        eyeY + ry,
+        eyeX - rx,
+        eyeY
+    );
+
+
+    ctx.closePath();
+
+
+    const white =
+        ctx.createLinearGradient(
+            eyeX,
+            eyeY - ry,
+            eyeX,
+            eyeY + ry
+        );
+
+
+    white.addColorStop(
+        0,
+        "#e9fbff"
+    );
+
+
+    white.addColorStop(
+        .5,
+        "#91aeb9"
+    );
+
+
+    white.addColorStop(
+        1,
+        "#263f4b"
+    );
+
+
+    ctx.fillStyle =
+        white;
+
+
+    ctx.fill();
+
+
+    /* =============================================
+       IRIS
+    ============================================= */
+
+    const irisX =
+        eyeX +
+        Math.sin(
+            time * .65
+        )
+        *
+        rx *
+        .07;
+
+
+    const irisY =
+        eyeY +
+        Math.cos(
+            time * .48
+        )
+        *
+        ry *
+        .12;
+
+
+    const irisRadius =
+        ry * 1.02;
+
+
+    const iris =
+        ctx.createRadialGradient(
+            irisX -
+            irisRadius * .25,
+            irisY -
+            irisRadius * .25,
+            irisRadius * .05,
+            irisX,
+            irisY,
+            irisRadius
+        );
+
+
+    iris.addColorStop(
+        0,
+        "#eaffff"
+    );
+
+
+    iris.addColorStop(
+        .15,
+        "#50eaff"
+    );
+
+
+    iris.addColorStop(
+        .42,
+        "#008ecb"
+    );
+
+
+    iris.addColorStop(
+        .72,
+        "#003c63"
+    );
+
+
+    iris.addColorStop(
+        1,
+        "#00111e"
+    );
+
+
+    ctx.save();
+
+    ctx.shadowColor =
+        "#00cfff";
+
+    ctx.shadowBlur =
+        18;
+
+
+    ctx.fillStyle =
+        iris;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        irisX,
+        irisY,
+        irisRadius,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    /* =============================================
+       PUPIL
+    ============================================= */
+
+    ctx.fillStyle =
+        "#000207";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        irisX,
+        irisY,
+        irisRadius * .36,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    /* =============================================
+       REFLECTION
+    ============================================= */
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.95)";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        irisX -
+        irisRadius * .25,
+        irisY -
+        irisRadius * .28,
+        irisRadius * .12,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    /* =============================================
+       BLINK
+    ============================================= */
+
+    const blink =
+        getBlinkAmount(
+            time
+        );
+
+
+    /* Upper eyelid */
+
+    ctx.fillStyle =
+        "#02070c";
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        eyeX - rx * 1.12,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX - rx * .55,
+        eyeY -
+        ry *
+        (2 - blink),
+        eyeX,
+        eyeY -
+        ry *
+        (2 - blink)
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX + rx * .55,
+        eyeY -
+        ry *
+        (2 - blink),
+        eyeX + rx * 1.12,
+        eyeY
+    );
+
+
+    ctx.lineTo(
+        W,
         0
+    );
+
+
+    ctx.lineTo(
+        0,
+        0
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    /* Lower eyelid */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        eyeX - rx * 1.12,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX - rx * .55,
+        eyeY +
+        ry *
+        (2 - blink * .82),
+        eyeX,
+        eyeY +
+        ry *
+        (2 - blink * .82)
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX + rx * .55,
+        eyeY +
+        ry *
+        (2 - blink * .82),
+        eyeX + rx * 1.12,
+        eyeY
+    );
+
+
+    ctx.lineTo(
+        W,
+        H
+    );
+
+
+    ctx.lineTo(
+        0,
+        H
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    /* =============================================
+       EYELID GLOW EDGE
+    ============================================= */
+
+    ctx.strokeStyle =
+        "rgba(55,210,255,.55)";
+
+
+    ctx.lineWidth =
+        Math.max(
+            2,
+            W * .008
+        );
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        eyeX - rx,
+        eyeY
+    );
+
+
+    ctx.quadraticCurveTo(
+        eyeX,
+        eyeY -
+        ry *
+        (1 - blink),
+        eyeX + rx,
+        eyeY
+    );
+
+
+    ctx.stroke();
+
+
+    ctx.restore();
+
+
+    /* =============================================
+       SCANLINES
+    ============================================= */
+
+    ctx.globalAlpha =
+        .045;
+
+
+    ctx.fillStyle =
+        "#b9f4ff";
+
+
+    for (
+        let y = 0;
+        y < H;
+        y += 6
+    ) {
+
+        ctx.fillRect(
+            0,
+            y,
+            W,
+            1
+        );
+
+    }
+
+
+    ctx.globalAlpha =
+        1;
+
+}
+
+
+/* =====================================================
+   ANIMATION
+===================================================== */
+
+function animate() {
+
+    if (
+        audio.duration &&
+        !audio.paused
+    ) {
+
+        eyeTime =
+            audio.currentTime;
+
+    }
+
+    else {
+
+        eyeTime =
+            performance.now()
+            /
+            1000;
+
+    }
+
+
+    drawEye(
+        eyeTime
+    );
+
+
+    requestAnimationFrame(
+        animate
+    );
+
+}
+
+
+animate();
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+createSongList();
+
+
+/* Automatically select first song */
+
+selectSong(
+    SONGS[0]
+)
