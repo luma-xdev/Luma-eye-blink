@@ -1,1 +1,145 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta name="theme-color" content="#02050a">
+
+    <title>Live Eye Music</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="player">
+
+        <!-- =========================
+             VISUAL
+        ========================== -->
+
+        <section class="visual">
+
+            <canvas id="eyeCanvas"></canvas>
+
+            <div class="top-bar">
+
+                <div class="live">
+                    <span></span>
+                    LIVE
+                </div>
+
+                <div id="songTitle">
+                    Select a song
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 LYRICS
+            ========================== -->
+
+            <div class="lyrics" id="lyrics">
+
+                <div class="lyric previous">
+                </div>
+
+                <div class="lyric current">
+                    Tap a song to start
+                </div>
+
+                <div class="lyric next">
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 CONTROLS
+            ========================== -->
+
+            <div class="controls">
+
+                <button id="playButton">
+                    ▶
+                </button>
+
+                <button id="muteButton">
+                    🔊
+                </button>
+
+                <button id="fullscreenButton">
+                    ⛶
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             MUSIC SEARCH
+        ========================== -->
+
+        <section class="music-panel">
+
+            <h2>🎵 Choose a Song</h2>
+
+            <div class="search-row">
+
+                <input
+                    id="searchInput"
+                    type="search"
+                    placeholder="Search song or artist..."
+                >
+
+                <button id="searchButton">
+                    Search
+                </button>
+
+            </div>
+
+
+            <div
+                id="status"
+                class="status"
+            >
+                Search for a song
+            </div>
+
+
+            <div
+                id="results"
+                class="results"
+            >
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             AUDIO
+        ========================== -->
+
+        <audio
+            id="audio"
+            preload="metadata"
+        ></audio>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
