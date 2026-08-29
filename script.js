@@ -109,7 +109,7 @@ const SONGS = [
         id: 5,
         title: "Tera Mera Rishta - New Version",
         artist: "Emraan Hashmi",
-        audio: "assets/song5.mp3",
+        audio: "assets/Tera_Mera_Rishta_-_New_Version___Awarapan_2___Emraan,_Disha___Mithoon,_Saaj,_Sayeed,_Mustafa(256k).mp3",
         lyrics: [
             { time: 0, text: "Tera Mera Rishta" },
             { time: 10, text: "New Version" }
