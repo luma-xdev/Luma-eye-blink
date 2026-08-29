@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,9 +8,9 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <meta name="theme-color" content="#02050a">
+    <meta name="theme-color" content="#02060b">
 
-    <title>Live Eye Music</title>
+    <title>Liked Songs</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -20,124 +19,133 @@
 
 <div class="app">
 
-    <div class="player">
+    <!-- LEFT / SONG AREA -->
 
-        <!-- =========================
-             VISUAL
-        ========================== -->
+    <div class="music-area">
 
-        <section class="visual">
+        <header class="header">
 
-            <canvas id="eyeCanvas"></canvas>
+            <button class="back-button" id="backButton">
+                ‹
+            </button>
 
-            <div class="top-bar">
-
-                <div class="live">
-                    <span></span>
-                    LIVE
-                </div>
-
-                <div id="songTitle">
-                    Select a song
-                </div>
-
+            <div class="page-title">
+                Liked Songs
             </div>
 
-
-            <!-- =========================
-                 LYRICS
-            ========================== -->
-
-            <div class="lyrics" id="lyrics">
-
-                <div class="lyric previous">
-                </div>
-
-                <div class="lyric current">
-                    Tap a song to start
-                </div>
-
-                <div class="lyric next">
-                </div>
-
-            </div>
+        </header>
 
 
-            <!-- =========================
-                 CONTROLS
-            ========================== -->
+        <!-- TABS -->
 
-            <div class="controls">
+        <div class="tabs">
 
-                <button id="playButton">
-                    ▶
-                </button>
+            <button class="tab">
+                Albums
+            </button>
 
-                <button id="muteButton">
-                    🔊
-                </button>
+            <button class="tab active">
+                Songs
+            </button>
 
-                <button id="fullscreenButton">
-                    ⛶
-                </button>
+            <button class="tab">
+                Playlists
+            </button>
 
-            </div>
-
-        </section>
+        </div>
 
 
-        <!-- =========================
-             MUSIC SEARCH
-        ========================== -->
+        <!-- SONG LIST -->
 
-        <section class="music-panel">
-
-            <h2>🎵 Choose a Song</h2>
-
-            <div class="search-row">
-
-                <input
-                    id="searchInput"
-                    type="search"
-                    placeholder="Search song or artist..."
-                >
-
-                <button id="searchButton">
-                    Search
-                </button>
-
-            </div>
-
-
-            <div
-                id="status"
-                class="status"
-            >
-                Search for a song
-            </div>
-
-
-            <div
-                id="results"
-                class="results"
-            >
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             AUDIO
-        ========================== -->
-
-        <audio
-            id="audio"
-            preload="metadata"
-        ></audio>
+        <div
+            class="song-list"
+            id="songList"
+        ></div>
 
     </div>
 
+
+    <!-- RIGHT VISUAL -->
+
+    <div class="visual-area">
+
+        <canvas
+            id="eyeCanvas"
+        ></canvas>
+
+
+        <!-- BRAND / VISUAL TEXT -->
+
+        <div class="visual-brand">
+
+            <div class="code-icon">
+                &lt;/&gt;
+            </div>
+
+            <div class="brand-title">
+                CIPHER <span>STACK</span>
+            </div>
+
+            <div class="brand-subtitle">
+                BUILDING DIGITAL FUTURES
+            </div>
+
+        </div>
+
+
+        <!-- LYRICS -->
+
+        <div
+            class="lyrics"
+            id="lyrics"
+        >
+            <span id="lyricText">
+                Select a song
+            </span>
+        </div>
+
+
+        <!-- PLAYER -->
+
+        <div class="player">
+
+            <button
+                id="playButton"
+                class="player-button"
+            >
+                ▶
+            </button>
+
+            <div class="progress">
+
+                <div
+                    id="progressBar"
+                    class="progress-bar"
+                ></div>
+
+            </div>
+
+            <button
+                id="muteButton"
+                class="player-button small"
+            >
+                🔊
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- AUDIO -->
+
+    <audio
+        id="audio"
+        preload="metadata"
+    ></audio>
+
 </div>
+
 
 <script src="script.js"></script>
 
